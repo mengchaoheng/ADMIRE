@@ -128,7 +128,7 @@ u(INDX>0.5,1)=u_act;
 
 end
 
-function [u, feas, errout,itlim] = DB_LPCA(yd,B,wd,up,wu,emax,uMin,uMax,itlim);
+function [u, feas, errout,itlim] = DB_LPCA(yd,B,wd,up,wu,emax,uMin,uMax,itlim); % note
 %   Dual Branch Control Allocation - Linear Program
 %      Objective Error Minimization Branch (1-norm)
 %      Control Error Minimization (1-norm)
@@ -469,7 +469,7 @@ u = xout(1:m)-xout(m+1:2*m)+up;
 
 end %DBcaLP1s_sol
 
-function [u, feas, errout,itlim] = DBinf_LPCA(yd,B,wd,up,wu,emax,uMin,uMax,itlim);
+function [u, feas, errout,itlim] = DBinf_LPCA(yd,B,wd,up,wu,emax,uMin,uMax,itlim); % note
 %   Dual Branch Control Allocation - Linear Program
 %      Objective Error Minimization (1-norm)
 %      Control Error Minimization (inf-norm)
@@ -1125,7 +1125,7 @@ u = xout(2*n+1:2*n+m)-xout(2*n+m+1:2*(n+m))+up;
 return;
 end
 
-function [u,errout] = SB_LPCA(yd,B,w,up,uMin,uMax,itlim);
+function [u,errout] = SB_LPCA(yd,B,w,up,uMin,uMax,itlim); % note
 % Single Branch Control Allocation Linear Program
 %    Direction Preserving
 %    Control Error minimizing
