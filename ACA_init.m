@@ -1,3 +1,19 @@
+% Separate the control allocation part of INIT_NDI as a simulation of the 
+% control allocation algorithm of "aircraft control allocation" to compare
+% the performance of different allocation algorithms
+
+% this is the init file
+
+%-------------------------------------------------------------------------
+load('M_des');  % Pseudo control command for a certain flight,that is come from 
+% M_des=zeros(100001,3);
+% for i=1:100001
+%     M_des(i,:)=CVdt_des(:,:,i)';
+% end
+%-------------------------------------------------------------------------
+
+% copy from INIT_DNI,m
+%-------------------------------------------------------------------------
 %% LOAD TRIM DATA
 % ADMIRE tools used to create linear model trimmed in SSL M=0.3 at 2000 m
 % load('Trim_M0p3ALT2000_LinDATA')

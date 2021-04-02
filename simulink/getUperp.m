@@ -9,6 +9,7 @@ function [ UK ] = getUperp( IN_MAT )
 % 20150823  KAB Created file to implement Durham's min-norm restoring
 % 20160301  KAB Added option to use weighting matrix
 
+% get u_perpendicular, in 7.4.4.1
 global NumU Wp
 [n1,m1]=size(IN_MAT);
 INDX=IN_MAT(end,:)>0.5;

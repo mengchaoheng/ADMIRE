@@ -223,7 +223,7 @@ Model {
       UnitExpr		      "inherit"
     }
     ParameterArgumentNames  ""
-    ComputedModelVersion    "3.737"
+    ComputedModelVersion    "3.736"
     NumModelReferences	    0
     NumTestPointedSignals   0
     NumProvidedFunctions    0
@@ -524,8 +524,8 @@ Model {
   ModifiedByFormat	  "%<Auto>"
   LastModifiedBy	  "Meng Chaoheng"
   ModifiedDateFormat	  "%<Auto>"
-  LastModifiedDate	  "Fri Apr 02 15:32:57 2021"
-  RTWModifiedTimeStamp	  539278375
+  LastModifiedDate	  "Fri Apr 02 15:31:10 2021"
+  RTWModifiedTimeStamp	  539278299
   ModifiedComment	  "nnt -- Mon Jun 05 13:08:11 2000 -- Version 3.42\n"
   ModifiedHistory	  "nnt -- Mon Jun 05 13:08:11 2000 -- Version 3.42\n\n\nnnt -- Mon Jun 05 11:01:33 2000 -- Version 3"
   ".41\n\n\nnnt -- Mon Jun 05 10:57:40 2000 -- Version 3.40\n\n\nnnt -- Mon Jun 05 10:56:46 2000 -- Version 3.39\n\n\nh"
@@ -557,7 +557,7 @@ Model {
   "000 -- Version 3.2\nMoved the blending function in the Nz and q controller.\nfll -- Thu Mar 02 10:50:25 2000 -- Vers"
   "ion 3.1\nChanged input blocks to \"Signal generator\"\nfll -- Thu Mar 02 10:50:25 2000 -- Version 3.0\nVersion 3.0 i"
   "s modified according to comments from users"
-  ModelVersionFormat	  "3.%<AutoIncrement:737>"
+  ModelVersionFormat	  "3.%<AutoIncrement:736>"
   SampleTimeColors	  off
   SampleTimeAnnotations	  off
   LibraryLinkDisplay	  "none"
@@ -668,7 +668,7 @@ Model {
 	  DisabledProps		  []
 	  Description		  ""
 	  StartTime		  "0.0"
-	  StopTime		  "10"
+	  StopTime		  "100"
 	  AbsTol		  "1e-6"
 	  AutoScaleAbsTol	  "off"
 	  FixedStep		  "dt"
