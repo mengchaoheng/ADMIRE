@@ -70,6 +70,8 @@ function [u,errout] = SBprio_LPCA(yd,ye,B,w,up,uMin,uMax,itlim) % note
 %   2002      Roger Beck  Original (SBcaLP2)
 %   8/2014    Roger Beck  Update for use in text
 
+%Tolerance for unknown == 0
+tol = 1e-7;
 
 %Initialize error code to zero
 errout = 0;
@@ -112,14 +114,17 @@ end
     end
 
 if errout ~=0  % Construct an incorrect solution to accompany error flags
-%     xout = zeros(2*m+1,1);
-%     indv = inB1<=(2*m+1);
-%     xout(inB1(indv)) = y1(indv);
-%     xout(~e1(1:m+1)) = -xout(~e1(1:2*m+1))+h(~e1(1:2*m+1));
-    u=zeros(4,1);
-    errout=0;
-    [u,errout] = SBprio_LPCA(ye,[0;0;0],B,w,up,uMin,uMax,itlim);
-    return;
+    if all( abs(ye)<=tol )
+        xout = zeros(2*m+1,1);
+        indv = inB1<=(2*m+1);
+        xout(inB1(indv)) = y1(indv);
+        xout(~e1(1:2*m+1)) = -xout(~e1(1:2*m+1))+h(~e1(1:2*m+1));
+    else
+        u=zeros(4,1);
+        errout=0;
+        [u,errout] = SBprio_LPCA(ye,[0;0;0],B,w,up,uMin,uMax,itlim);
+        return;
+    end
 else  % No Error continue to solve problem
     
         
