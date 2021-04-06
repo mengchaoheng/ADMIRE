@@ -1,4 +1,4 @@
-function [u,errout] = SB_LPCA(yd,ye,B,w,up,uMin,uMax,itlim) % note
+function [u,errout] = SBprio_LPCA(yd,ye,B,w,up,uMin,uMax,itlim) % note
 % Single Branch Control Allocation Linear Program
 %    Direction Preserving
 %    Control Error minimizing
@@ -118,7 +118,7 @@ if errout ~=0  % Construct an incorrect solution to accompany error flags
 %     xout(~e1(1:m+1)) = -xout(~e1(1:2*m+1))+h(~e1(1:2*m+1));
     u=zeros(4,1);
     errout=0;
-    [u,errout] = SB_LPCA(ye,[0;0;0],B,w,up,uMin,uMax,itlim);
+    [u,errout] = SBprio_LPCA(ye,[0;0;0],B,w,up,uMin,uMax,itlim);
     return;
 else  % No Error continue to solve problem
     
