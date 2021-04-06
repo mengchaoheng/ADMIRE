@@ -84,7 +84,7 @@ CAmethod=6;
 % 3 - Dirction Preserving scaled
 % 4 - Mixed Optimization, single branch
 % 5 - Single Branch
-LPmethod=3;
+LPmethod=4;
 
 % Aero Surface Position Limits Function of Mach number
 % This data was taken from the file act_pos_lim.c provided with the ADMIRE
