@@ -71,6 +71,7 @@ CAmethod=6;
 % 3 - Dirction Preserving scaled
 % 4 - Mixed Optimization, single branch
 % 5 - Single Branch
+% 6 - prio based on Single Branch
 LPmethod=5;
 
 % Aero Surface Position Limits Function of Mach number
@@ -131,7 +132,7 @@ Urlim=[50*d2r   % R canard, rad/s
 % NOTE: No rate limit data available in Admire simulation for effectors 8
 % through 16, made up place holder values provided here. KAB
 
-UseRL=0; % Position limited commands, UseRL=0, add rate limits UseRL=1
+UseRL=1; % Position limited commands, UseRL=0, add rate limits UseRL=1
 % Aero Actuator Dynamics
 Uw=[20      % R canard
     20      % L canard

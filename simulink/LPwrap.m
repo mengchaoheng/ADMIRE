@@ -49,7 +49,7 @@ LPmethod=IN_MAT(end,end);
         %    Direction Preserving
         %    Control Error minimizing
 % If LPmethod is not one of the allowed options, set it to zero
-if sum(LPmethod==[0 1 2 3 4 5 6])~=1
+if sum(LPmethod==[0 1 2 3 4 5 6 7])~=1
     LPmethod=0;
 end
 
@@ -85,13 +85,12 @@ uMax=umax_act;
 % Users may add code here to specify alternative values
 wd=ones(k,1);
 up=zeros(m_act,1);
-wu=ones(m_act,1);
+wu=0.1*ones(m_act,1);
 emax=ones(k,1)*2e1;
-itlim=5e2;
-lam=1;
+itlim=50;
+lam=0.1;
 eMax=emax;
-w=0.1*wu;
-
+w=wu;
 switch LPmethod
     case 0
         [u_act, feas, errout,itlim] = DB_LPCA(yd,B,wd,up,wu,emax,...
@@ -120,10 +119,15 @@ switch LPmethod
     case 5
         [u_act,errout] = SB_LPCA(yd,B,w,up,uMin,uMax,itlim);
         % Single Branch Control Allocation Linear Program
-        %    Direction Preserving
+        %    Direction Preservingyd
         %    Control Error minimizing
     case 6
-        [u_act,errout] = SBprio_LPCA(yd,[0;0;0],B,w,up,uMin,uMax,itlim);
+        [u_act,errout] = SBprio_LPCA([yd(1);yd(2);yd(3)-0],[0;0;0],B,w,up,uMin,uMax,itlim);
+        % Single Branch Control Allocation Linear Program
+        %    Direction Preserving
+        %    Control Error minimizing
+    case 7
+        [u_act,errout] = DPprio_LPCA([yd(1);yd(2);(yd(3)-0)],[0;0;0],B,uMin,uMax,itlim);
         % Single Branch Control Allocation Linear Program
         %    Direction Preserving
         %    Control Error minimizing
@@ -221,7 +225,7 @@ feas = 0;
 %Check if feasible...if so call sufficiency branch if not exit
 if J < 1e-5,
     feas = 1;
-	[u,Js, errout,itlim] = DBcaLP1s_sol(yd,B,wu,u,up,inBout, eout, uMin,uMax,n,m,itlim);   
+	[u,Js, errout,itlim] = DBcaLP1s_sol(B*u,B,wu,u,up,inBout, eout, uMin,uMax,n,m,itlim);   
     if Js < 1e-5,
 	   feas = 2;
 	end
@@ -375,7 +379,7 @@ function [u,J,errout,itlim] = DBcaLP1s_sol(yd,B,w,u0,up,inBi, ei, uMin,uMax,n,m,
 %   Assumes that the desired objective, yd, is attainable and seeks to minimize the error
 %  between the controls and a "preferred" control solution.    
 %  The Bounded Revised Simplex solver is called to minimize
-%    min J= | diag(wu)*(u - up) |_1  s.t. umin <= u <=umax
+%    min J= | diag(wu)*(u - up) |_1  s.t. umin <= u <=umax and Bu=yd
 %   (See A.4.1 in the text for a discussion of a similar formulation).
 %
 %
@@ -692,7 +696,6 @@ end %DBinfcaLP1s_sol
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim);
 % Direction Preserving Control Allocation Linear Program
 %
@@ -757,16 +760,17 @@ function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim);
 %Initialize error code to zero
 errout = 0;
 
+tol = 1e-10;
 %Figure out how big the problem is (use standard CA definitions for m & n)
 [n,m] = size(B);
 
 %Check to see if yd == 0
 %  May want to adjust the tolerance to improve numerics of later steps
-if (all(abs(yd) < 1e-12)),    %yd = 0 ==> u=0
+if (all(abs(yd) < tol))    %yd = 0 ==> u=0
     errout = -1;
     u = zeros(m,1);
     return;
-end;
+end
 
 %Construct an LP using scaling parameter to enforce direction preserving
 A = [B -yd];
@@ -802,11 +806,160 @@ end
 	end;
 
 if errout ~=0  % Construct an incorrect solution to accompany error flags
-    xout = zeros(m+1,1);
-    indv = inB1<=(m+1);
-    xout(inB1(indv)) = y1(indv);
-    xout(~e1(1:m+1)) = -xout(~e1(1:m+1))+h(~e1(1:m+1));
+        xout = zeros(m+1,1);
+        indv = inB1<=(m+1);
+        xout(inB1(indv)) = y1(indv);
+        xout(~e1(1:m+1)) = -xout(~e1(1:m+1))+h(~e1(1:m+1));
+else  % No Error continue to solve problem
     
+    
+    %Solve using initial problem from above
+    [y2, inB2, e2,itlim,errsimp] = simplxuprevsol(A ,c',b,inB1,h,e1(1:m+1),n,m+1,itlim);
+    
+    %Construct solution to original LP problem from bounded simplex output
+    %  Set non-basic variables to 0 or h based on e2
+    %  Set basic variables to y2 or h-y2.
+    xout = zeros(m+1,1);
+    xout(inB2) = y2;
+    xout(~e2) = -xout(~e2)+h(~e2);
+    
+    if itlim<=0
+        errout = 3;
+        disp('Too Many Iterations Finding Final Solution');
+    end
+	if errsimp
+	    errout = 1;
+		disp('Solver error');
+	end;
+    
+end
+
+
+%Transform back to control variables
+u = xout(1:m)+uMin;
+return;
+end
+
+function [u, errout] = DPprio_LPCA(yd,ye,B,uMin,uMax,itlim);
+% Direction Preserving Control Allocation Linear Program
+%
+% function [u, errout] = DP_LPCA(yd,B,uMin,uMax,itlim);
+%
+%    Solves the control allocation problem while preserving the
+%  objective direction for unattainable commands. The solution
+%  is found by solving the problem,
+%    min -lambda,
+%    s.t. B*u = lambda*yd, uMin<=u<=uMax, 0<= lambda <=1
+%
+%  For yd outside the AMS, the solution returned is that the
+%  maximum in the direction of yd.
+%
+%  For yd strictly inside the AMS, the solution achieves
+%  Bu=yd and m-n controls will be at their limits; but there
+%  is no explicit preference to which solution will be 
+%  returned. This limits the usefulness of this routine as
+%  a practical allocator unless preferences for attainable solutions
+%  are handled externally.
+%
+%  (For derivation of a similar formulation see A.1.2 and A.2.3 in the
+%  text)
+%
+%
+%  Inputs:
+%          yd [n]    = Desired objective
+%          B [n,m]   = Control Effectiveness matrix
+%          uMin[m,1] = Lower bound for controls
+%          uMax[m,1] = Upper bound for controls
+%          itlim     = Number of allowed iterations limit
+%                         (Sum of iterations in both branches)
+%
+% Outputs:
+%         u[m,1]     = Control Solution
+%         errout     = Error Status code
+%                         0 = found solution
+%                         <0 = Error in finding initial basic feasible solution
+%                         >0 = Error in finding final solution
+%                         -1,1 = Solver error (unbounded solution)
+%                         -2   = Initial feasible solution not found
+%                         -3,3 = Iteration limit exceeded
+%         itlim      = Number of iterations remaining after solution found
+%
+% Calls:
+%         simplxuprevsol = Bounded Revised Simplex solver (simplxuprevsol.m)
+%
+% Notes:
+%   If errout ~0 there was a problem in the solution. %
+%
+%    Error code < 0 implies an error in the initialization and there is no guarantee on
+%  the quality of the output solution other than the control limits.
+%    Error code > 0 for errors in final solution--B*u is in the correct direction and has
+%  magnitude < yd, but B*u may not equal yd (for yd attainable)
+%   or be maximized (for yd unattainable)
+%
+% Modification History
+%   2002      Roger Beck  Original (DPcaLP8.m)
+%   8/2014    Roger Beck  Update for use in text
+
+
+%Initialize error code to zero
+errout = 0;
+
+tol = 1e-10;
+%Figure out how big the problem is (use standard CA definitions for m & n)
+[n,m] = size(B);
+
+%Check to see if yd == 0
+%  May want to adjust the tolerance to improve numerics of later steps
+if (all(abs(yd+ye) < tol))    %yd = 0 ==> u=0
+    errout = -1;
+    u = zeros(m,1);
+    return;
+end
+
+%Construct an LP using scaling parameter to enforce direction preserving
+A = [B -yd];
+b = ye-B*uMin;
+c = [zeros(m,1);-1];
+h = [uMax-uMin; 1];
+
+
+%To find Feasible solution construct problem with appended slack variables
+sb = 2*(b > 0)-1;
+Ai = [A diag(sb)];   
+ci = [zeros(m+1,1);ones(n,1)];
+inBi = [m+2:m+n+1];
+ei = true(m+n+1,1);
+hi = [h;2*abs(b)];
+
+%Use Bounded Revised Simplex to find initial basic feasible point of
+%original program
+[y1, inB1, e1,itlim, errsimp] = simplxuprevsol(Ai,ci',b,inBi,hi,ei,n,m+n+1,itlim);
+
+%Check that Feasible Solution was found
+if itlim<=0
+    errout = -3;
+    disp('Too Many Iterations Finding initial Solution');
+end
+if any(inB1>(m+1))
+    errout = -2;
+    disp('No Initial Feasible Solution found');
+end
+	if errsimp
+	    errout = -1;
+		disp('Solver error');
+	end;
+
+if errout ~=0  % Construct an incorrect solution to accompany error flags
+    if all( abs(ye)<=tol )
+        xout = zeros(m+1,1);
+        indv = inB1<=(m+1);
+        xout(inB1(indv)) = y1(indv);
+        xout(~e1(1:m+1)) = -xout(~e1(1:m+1))+h(~e1(1:m+1));
+    else
+        [u,~] = DPprio_LPCA(ye,[0;0;0],B,uMin,uMax,itlim);
+%         [u,~] = SBprio_LPCA(ye,[0;0;0],B,w,up,uMin,uMax,itlim);
+        return;
+    end
 else  % No Error continue to solve problem
     
     
@@ -1223,7 +1376,7 @@ h = [uMax-up; up-uMin;1];
 sb = 2*(b > 0)-1;
 Ai = [A diag(sb)];   
 ci = [zeros(2*m+1,1);ones(n,1)];
-inBi = [2*m+2:2*m+n+1];
+inBi = 2*m+2:2*m+n+1;
 ei = true(2*m+n+1,1);
 hi = [h;2*abs(b)];
 
@@ -1249,7 +1402,7 @@ if errout ~=0  % Construct an incorrect solution to accompany error flags
     indv = inB1<=(2*m+1);
     xout(inB1(indv)) = y1(indv);
     xout(~e1(1:2*m+1)) = -xout(~e1(1:2*m+1))+h(~e1(1:2*m+1));
-
+    
     
 else  % No Error continue to solve problem
     
@@ -1357,7 +1510,7 @@ function [u,errout] = SBprio_LPCA(yd,ye,B,w,up,uMin,uMax,itlim) % note
 %   8/2014    Roger Beck  Update for use in text
 
 %Tolerance for unknown == 0
-tol = 1e-7;
+tol = 1e-10;
 
 %Initialize error code to zero
 errout = 0;
@@ -1393,11 +1546,12 @@ if any(inB1>(2*m+1))
 % if any(find(inB1)>(2*m+1))
     errout = -2;
     disp('No Initial Feasible Solution found');
+    ye
 end
-	if errsimp
-	    errout = -1;
-		disp('Solver error');
-    end
+if errsimp
+    errout = -1;
+    disp('Solver error');
+end
 
 if errout ~=0  % Construct an incorrect solution to accompany error flags
     if all( abs(ye)<=tol )
@@ -1406,9 +1560,8 @@ if errout ~=0  % Construct an incorrect solution to accompany error flags
         xout(inB1(indv)) = y1(indv);
         xout(~e1(1:2*m+1)) = -xout(~e1(1:2*m+1))+h(~e1(1:2*m+1));
     else
-        u=zeros(4,1);
-        errout=0;
-        [u,errout] = SBprio_LPCA(ye,[0;0;0],B,w,up,uMin,uMax,itlim);
+%         [u,~,~] = DPscaled_LPCA(ye,B,uMin,uMax,itlim);
+        [u,~] = SBprio_LPCA(ye,[0;0;0],B,w,up,uMin,uMax,itlim);
         return;
     end
 else  % No Error continue to solve problem
@@ -1432,7 +1585,7 @@ else  % No Error continue to solve problem
     end
     if errsimp
 	    errout = 1;
-		disp('Solver error');
+		disp('Solver error');       
     end
 
     
@@ -1681,7 +1834,7 @@ switch  length(varargin)
  end    	
     	
 %Tolerance for unknown == 0
-tol = 1e-10;
+tol = 1e-8;
 
 %Index list for non-basic variables
 nind = 1:(n-m);
