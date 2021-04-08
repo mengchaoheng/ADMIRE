@@ -1,0 +1,3 @@
+[submodule "aircraft-control-allocation-book-simulation"]
+	path = aircraft-control-allocation-book-simulation
+	url = https://github.com/mengchaoheng/aircraft-control-allocation-book-simulation.git
